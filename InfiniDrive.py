@@ -39,21 +39,28 @@ def openFileBinary(path):
 
 def mergeImages(path):
     file_list = os.listdir(path)
-    file_list.reverse()
+    file_list.sort()
     print(file_list)
     raw_buffer=bytearray()
-    #for file in range(len(file_list)-1):
-    #    im = Image.open(r'file_list[file]')
-
-
+    for file in range(len(file_list)):
+        im = Image.open(f'{path}/{file_list[file]}', mode='r')
+        list(im.getdata())
+        pixel_list = bytearray([pixel for tuple in list(im.getdata()) for pixel in tuple])
+        raw_buffer+=pixel_list
+        pixel_list.clear()
+    print(len(raw_buffer))
+    while raw_buffer[-1] == 0 :
+        del raw_buffer[-1]
+    print(len(raw_buffer))
+    with open("prueba_recovered", "wb") as recovered:
+        recovered.write(raw_buffer)
 split_parts = guessSplittedParts(filepath)
 if split_parts == 1:
     print(f'File will be splitted in 1 image ')
 else:
     print(f'File will be splitted in {split_parts} images ')
-
-print(guessZFillSplit)
-openFileBinary(filepath)
+#print(guessSplittedParts)
+#openFileBinary(filepath)
 mergeImages(outfolder)
 
 
