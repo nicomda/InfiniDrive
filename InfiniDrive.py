@@ -1,8 +1,5 @@
 #!bin/python3
-import os
-import io
-import sys
-import math
+import os, sys, io, math, getopt
 from pathlib import Path 
 import PIL.Image as Image
 from PIL.PngImagePlugin import PngInfo
@@ -10,9 +7,35 @@ from PIL.PngImagePlugin import PngInfo
 MB_IMG_DATA=36000000 #12MB IMG's
 split_counter=0
 split_parts=0
+operation_mode="None"
 filepath=sys.argv[1]
 outfolder=Path(filepath).resolve().stem
-
+def printQuickHelp():
+    print("***Quick Usage steps***")
+    print("----------------------------------------")
+    print("To split & encode file as RGB images: InfiniDrive.py -s <file_to_encrypt>")
+    print("To merge RGB images folder to the original file: InfiniDrive.py -m <imgs_folder> ")
+def getArgsOptions():
+    global filepath, size, operation_mode
+    if len(sys.argv) == 1:
+        printQuickHelp()
+    argv = sys.argv[1:]
+    try:
+        opts, args = getopt.getopt(argv, 'hs:m:', ["help","imgsize=","merge","split"])
+    except getopt.GetoptError:
+        print('Arguments error, just use as below or -h for more options.')
+        printQuickHelp()
+        sys.exit()
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            printExtendedHelp()
+            sys.exit()
+        elif opt in ('-s', '--split'):
+            operation_mode="split"
+        elif opt in ('-m', '--merge'):
+            operation_mode="merge"
+        elif opt in ('--imagesize'):
+            #var=int(arg)
 def guessSplittedParts(path):
     return math.ceil(Path(path).stat().st_size/MB_IMG_DATA)
 
@@ -20,9 +43,11 @@ def generateImg(bytearray, width, height):
     global filepath, split_counter, outfolder
     if(not Path.exists(Path(outfolder))):
         os.mkdir(outfolder)
-    #Adding metadata    
+    #Adding metadata
+    filename, file_extension = os.path.splitext(filepath)    
     infinidata = PngInfo()
-    infinidata.add_text("Extension", "EXAMPLE")
+    infinidata.add_text("Extension", file_extension)
+    infinidata.add_text("Name", filename)
     img=Image.frombytes("RGB", (width,height), bytes(bytearray))
     img_name=f'{outfolder}_{str(split_counter).zfill(len(str(guessSplittedParts(filepath))))}.png'
     img.save(f'{outfolder}/{img_name}',"PNG", pnginfo=infinidata)
@@ -51,7 +76,7 @@ def mergeImages(path):
         im_width, im_height = im.size
         list(im.getdata())
         pixel_list = bytearray([pixel for tuple in list(im.getdata()) for pixel in tuple])
-        print(im.text)
+        print(im.text) #Printing metadata
         raw_buffer+=pixel_list
         pixel_list.clear()
     print(len(raw_buffer))
@@ -67,8 +92,9 @@ else:
     print(f'File will be splitted in {split_parts} images ')
 #print(guessSplittedParts)
 #openFileBinary(filepath)
-mergeImages(outfolder)
-
+#mergeImages(outfolder)
+print(filename)
+print(file_extension)
 
 
            
