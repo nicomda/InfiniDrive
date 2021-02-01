@@ -5,6 +5,7 @@ import sys
 import math
 from pathlib import Path 
 import PIL.Image as Image
+from PIL.PngImagePlugin import PngInfo
 
 MB_IMG_DATA=36000000 #12MB IMG's
 split_counter=0
@@ -19,9 +20,12 @@ def generateImg(bytearray, width, height):
     global filepath, split_counter, outfolder
     if(not Path.exists(Path(outfolder))):
         os.mkdir(outfolder)
+    #Adding metadata    
+    infinidata = PngInfo()
+    infinidata.add_text("Extension", "EXAMPLE")
     img=Image.frombytes("RGB", (width,height), bytes(bytearray))
     img_name=f'{outfolder}_{str(split_counter).zfill(len(str(guessSplittedParts(filepath))))}.png'
-    img.save(f'{outfolder}/{img_name}',"PNG")
+    img.save(f'{outfolder}/{img_name}',"PNG", pnginfo=infinidata)
     print(f'Image {split_counter} created')
     split_counter+=1
         
@@ -44,8 +48,10 @@ def mergeImages(path):
     raw_buffer=bytearray()
     for file in range(len(file_list)):
         im = Image.open(f'{path}/{file_list[file]}', mode='r')
+        im_width, im_height = im.size
         list(im.getdata())
         pixel_list = bytearray([pixel for tuple in list(im.getdata()) for pixel in tuple])
+        print(im.text)
         raw_buffer+=pixel_list
         pixel_list.clear()
     print(len(raw_buffer))
