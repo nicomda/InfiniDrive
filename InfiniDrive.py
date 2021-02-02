@@ -13,6 +13,7 @@ filepath="." #Name of the file to be splitted
 outfolder=Path(filepath).resolve().stem #By default, the folder where the images are saved
 origname="" #Name of the file before being splitted. Will be extracted from PNG's EXIF.
 outputpath="" #Just if you want to modify the default output file path
+filebytessize=0 #To delete from the end passing MD5 check.
 
 
 def printQuickHelp():
@@ -23,7 +24,7 @@ def printQuickHelp():
     print("If you need more info, just call me with -h or --help")
 
 def printExtendedHelp():
-    print('Available arguments')
+    print('\t\t-------Available options--------')
     print('-s <file_to_split>               Split mode')
     print('-m <folder_with_img_to_merge>    Merge mode')
     print('-o, <path_to_img_folder>         To change the default output folder when splitting')
@@ -69,11 +70,13 @@ def generateImg(bytearray, size): #Will generate images of given size with the r
     filename, file_extension = os.path.splitext(filepath)    
     infinidata = PngInfo()
     infinidata.add_text("OrigName", f'{filename}{file_extension}')
+    file_stats= os.stat(filepath)
+    infinidata.add_text("OrigSize", f'{file_stats.st_size}')
     img=Image.frombytes("RGB", (size,size), bytes(bytearray))
     img_name=f'{outfolder}_{str(split_counter).zfill(len(str(guessSplittedParts(filepath))))}.png'
     img.save(f'{outfolder}/{img_name}',"PNG", pnginfo=infinidata)
-    print(f'Creating Image {split_counter+1}/{split_parts}', end = "\r")
     split_counter+=1
+    print(f'Creating Image {split_counter+1}/{split_parts}', end = "\r")
         
 def openFileBinary(path): #Will open a file in raw mode and then generate as much as needed images to store the file.
     global imgsize, split_parts
@@ -93,7 +96,7 @@ def openFileBinary(path): #Will open a file in raw mode and then generate as muc
         generateImg(raw_data,imgsize) #Generating last img
 
 def mergeImages(path):
-    global origname, outputpath
+    global origname, outputpath, MB_IMG_DATA
     file_list = os.listdir(path)
     file_list.sort()
     im = Image.open(f'{path}/{file_list[0]}', mode='r') #Opening first image to get filename before entering the loop
@@ -117,12 +120,14 @@ def mergeImages(path):
             print(f'Processing {file_list[file]} ({file_counter}/{len(file_list)})', end = "\r")
             im = Image.open(f'{path}/{file_list[file]}', mode='r')
             im_width, im_height = im.size
+            MB_IMG_DATA=im_width*im_height*3
             list(im.getdata())
             pixel_list = bytearray([pixel for tuple in list(im.getdata()) for pixel in tuple])
             if(file_list[file] == file_list[-1]): #Deleting EOF padding from the last img
-                print("Deleting last image null bytes")
-                while pixel_list[-1] == 0 :
-                    del pixel_list[-1]
+                print("Deleting last image null bytes...")
+                bytessize=int(im.text.get('OrigSize'))
+                bytestopad=(len(file_list)*MB_IMG_DATA)-bytessize
+                pixel_list=pixel_list[:-(bytestopad)]
             recovered.write(pixel_list)
             pixel_list.clear()
             file_counter=file_counter+1
