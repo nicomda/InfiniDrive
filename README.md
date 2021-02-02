@@ -47,8 +47,8 @@ pip3 install -r requirements.txt
 | --------------- |:-------------|:---------:| 
 | -s                               |Split mode 
 | -m                               |Merge mode 
-| -o                               |Change default output folder when splitting |✔
+| -o <new_output_folder>                              |Change default output folder when splitting |✔
 | --outputfile=<out_file_path>     |Path where output file will be created |✔
 | --imgpxl='side_size'    |Change the size of the output images |✔
-| -h,                            |Extended help |✔
+| -h                            |Extended help |✔
 
